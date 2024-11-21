@@ -166,6 +166,43 @@
   const messageForm = document.querySelector('.message-form');
   const messageInput = document.querySelector('.message-input');
 
+  navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+  .then((stream) => {
+    alert('Stream получен:', stream);
+
+    // Настройка MediaRecorder для записи видео и аудио
+    const mediaRecorder = new MediaRecorder(stream);
+    const chunks = [];
+
+    mediaRecorder.ondataavailable = (event) => {
+      chunks.push(event.data);
+    };
+
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(chunks, { type: 'video/webm' });
+
+      const url = URL.createObjectURL(blob);
+      alert('Видео записано, URL:', url);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'recording.webm';
+      a.click();
+    };
+
+    mediaRecorder.start();
+    alert('Начата запись');
+
+    setTimeout(() => {
+      mediaRecorder.stop();
+      alert('Остановлена запись');
+    }, 5000);
+  })
+  .catch((error) => {
+    alert('Ошибка доступа к камере или микрофону:', error);
+  });
+
+
   messageForm.addEventListener('submit', (event) => {
     event.preventDefault();
 
