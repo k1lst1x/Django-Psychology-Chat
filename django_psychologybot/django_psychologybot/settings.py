@@ -8,7 +8,7 @@ DEBUG = False
 
 SECRET_KEY = 'ux)plafr!taa=pops7c#2ig19)j-3g(bd93q-6@%&v5bxb6x-+'
 
-ALLOWED_HOSTS = ['django_psychologybot.herokuapp.com']
+ALLOWED_HOSTS = ['django-psychologybot.herokuapp.com']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
