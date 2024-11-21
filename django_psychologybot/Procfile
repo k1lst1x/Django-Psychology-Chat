@@ -1,1 +1,2 @@
-web: gunicorn django_psychologybot.wsgi:application --log-file - 
+web: gunicorn django_psychologybot.wsgi --log-file -
+release: bash release.sh
