@@ -7,9 +7,9 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+DEBUG = False
 
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = 'ux)plafr!taa=pops7c#2ig19)j-3g(bd93q-6@%&v5bxb6x-+'
 
 ALLOWED_HOSTS = ['django_psychologybot.herokuapp.com']
 
