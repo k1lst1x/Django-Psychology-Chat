@@ -1,1 +1,1 @@
-web: gunicorn django_psychologybot.wsgi
+web: gunicorn django-psychologybot.wsgi
