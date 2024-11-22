@@ -3,16 +3,11 @@ from django.http import JsonResponse
 from openai import OpenAI, AssistantEventHandler
 from typing_extensions import override
 
-# from g4f.client import Client
-
-# import asyncio
-# if hasattr(asyncio, 'WindowsSelectorEventLoopPolicy'):
-#     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 assistant_id = "asst_f0PmPM76Nc8dbyEEfeYVQlRy"
 
 client = OpenAI(
-    api_key="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"
+    api_key="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"
 )
 
 class EventHandler(AssistantEventHandler):
@@ -20,26 +15,10 @@ class EventHandler(AssistantEventHandler):
         super().__init__()
         self.response = ""
         
-    # @override
-    # def on_text_created(self, text) -> None:
-    #     self.response += f"{text}"
-    
     @override
     def on_text_delta(self, delta, snapshot):
         self.response += delta.value
 
-    # def on_tool_call_created(self, tool_call):
-    #     self.response += f"{tool_call.type}\n"
-
-    # def on_tool_call_delta(self, delta, snapshot):
-    #     if delta.type == 'code_interpreter':
-    #         if delta.code_interpreter.input:
-    #             self.response += delta.code_interpreter.input
-    #         if delta.code_interpreter.outputs:
-    #             self.response += "\n\noutput >"
-    #             for output in delta.code_interpreter.outputs:
-    #                 if output.type == "logs":
-    #                     self.response += f"\n{output.logs}"
 
     def get_response(self):
         return self.response
@@ -47,19 +26,14 @@ class EventHandler(AssistantEventHandler):
 thread = client.beta.threads.create()
 
 def ask_openai_with_assistant(message):
-    # Создаем новый поток
-    
-    # Отправляем сообщение пользователю
     client.beta.threads.messages.create(
         thread_id=thread.id,
         role="user",
         content=message
     )
 
-    # Обработчик событий
     event_handler = EventHandler()
 
-    # Обрабатываем поток
     with client.beta.threads.runs.stream(
         thread_id=thread.id,
         assistant_id=assistant_id,
@@ -69,34 +43,18 @@ def ask_openai_with_assistant(message):
 
     return event_handler.get_response()
 
-def ask_openai(message):
-	response = client.chat.completions.create(
-		messages=[
-            {"role": "system", "content": "You are an helpful assistant."},
-            {"role": "user", "content": message},
-        ],
-		model="gpt-3.5-turbo",
-	)
-
-	response_dict = response.to_dict()
-	return response_dict['choices'][0]['message']['content'].strip()
-
-
 # def ask_openai(message):
-# 	client = Client()
-# 	model_list = ["gpt-4o-mini", "gpt-4-turbo", "gpt-4"]
-# 	for model in model_list:
-# 		try:
-# 			response = client.chat.completions.create(
-# 				model = model,
-# 				messages=[
-# 					{"role": "user", "content": message},
-# 				],
-# 			)
-# 			return response.choices[0].message.content
-# 		except Exception as error:
-# 			print("ОШИБКА: ", error)
-# 			continue
+# 	response = client.chat.completions.create(
+# 		messages=[
+#             {"role": "system", "content": "You are an helpful assistant."},
+#             {"role": "user", "content": message},
+#         ],
+# 		model="gpt-3.5-turbo",
+# 	)
+
+# 	response_dict = response.to_dict()
+# 	return response_dict['choices'][0]['message']['content'].strip()
+
 
 def chatbot(request):
 	if request.method == 'POST':
