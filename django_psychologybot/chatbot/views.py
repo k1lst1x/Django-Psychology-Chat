@@ -82,14 +82,14 @@ def ask_openai_with_assistant(message, thread_id):
             f.write(pdf_file.getvalue())
 
         # Перенаправляем на URL для скачивания
-        return JsonResponse({
-            'message': 'Анкетирование завершено. Отчёт готов для скачивания.',
-            'file_url': os.path.join(settings.MEDIA_URL, 'assistant_report.pdf')
-        })
+        # return JsonResponse({
+        #     'message': 'Анкетирование завершено. Отчёт готов для скачивания.',
+        #     'file_url': os.path.join(settings.MEDIA_URL, 'assistant_report.pdf')
+        # })
+        return assistant_response, os.path.join(settings.MEDIA_URL, 'assistant_report.pdf')
 
-
-
-    return JsonResponse({'message': assistant_response})
+    return assistant_response, None
+    # return JsonResponse({'message': assistant_response})
 
 
 def login(request):
@@ -119,8 +119,8 @@ def chatbot(request):
         if not thread_id:
             return redirect('login')
 
-        response = ask_openai_with_assistant(message, thread_id)
-        return JsonResponse({'message': message, 'response': response})
+        response, file_url = ask_openai_with_assistant(message, thread_id)
+        return JsonResponse({'message': message, 'response': response, 'fileURL': file_url})
 
     message = request.session.get('message', 'Данные отсутствуют.')
     thread_id = request.session.get('thread_id')
