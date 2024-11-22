@@ -1,8 +1,7 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from openai import OpenAI, AssistantEventHandler
 from typing_extensions import override
-from django.shortcuts import redirect
 
 
 assistant_id = "asst_f0PmPM76Nc8dbyEEfeYVQlRy"
@@ -24,7 +23,11 @@ class EventHandler(AssistantEventHandler):
     def get_response(self):
         return self.response
 
+
 thread = client.beta.threads.create()
+
+QUESTIONNAIRE_PASSED = 'Анкетирование пройдено!'
+
 
 def ask_openai_with_assistant(message):
     client.beta.threads.messages.create(
@@ -43,19 +46,6 @@ def ask_openai_with_assistant(message):
         stream.until_done()
 
     return event_handler.get_response()
-
-def ask_openai(message):
-	response = client.chat.completions.create(
-		messages=[
-            {"role": "system", "content": "You are an helpful assistant."},
-            {"role": "user", "content": message},
-        ],
-		model="gpt-3.5-turbo",
-	)
-
-	response_dict = response.to_dict()
-	return response_dict['choices'][0]['message']['content'].strip()
-
 
 
 def login(request):
