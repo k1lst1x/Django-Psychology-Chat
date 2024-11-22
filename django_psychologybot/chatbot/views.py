@@ -2,8 +2,10 @@ from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from openai import OpenAI, AssistantEventHandler
 from typing_extensions import override
-from django.shortcuts import redirect
 from . import creds
+from django_psychologybot import settings
+from weasyprint import HTML
+import os
 
 
 assistant_id = creds.assistant_id
@@ -27,6 +29,31 @@ class EventHandler(AssistantEventHandler):
 
 # thread = client.beta.threads.create()
 
+QUESTIONNAIRE_LABEL_RU = 'Анектирование завершено!'
+QUESTIONNAIRE_LABEL_KZ = 'Сауалдау аяқталды!'
+
+
+def generate_pdf(content):
+    """
+    Генерирует PDF-файл из текста.
+    """
+    html_content = f"""
+    <html>
+    <head>
+        <title>Отчёт ассистента</title>
+    </head>
+    <body>
+        <h1>Отчёт ассистента</h1>
+        <p>{content}</p>
+    </body>
+    </html>
+    """
+    pdf_file = io.BytesIO()
+    HTML(string=html_content).write_pdf(pdf_file)
+    pdf_file.seek(0)
+    return pdf_file
+
+
 def ask_openai_with_assistant(message, thread_id):
     # Отправляем сообщение пользователю
     client.beta.threads.messages.create(
@@ -44,7 +71,25 @@ def ask_openai_with_assistant(message, thread_id):
     ) as stream:
         stream.until_done()
 
-    return event_handler.get_response()
+    # return event_handler.get_response()
+    assistant_response = event_handler.get_response()
+
+    if QUESTIONNAIRE_LABEL_RU in assistant_response or QUESTIONNAIRE_LABEL_KZ in assistant_response:
+        pdf_file = generate_pdf(assistant_response)
+        pdf_path = os.path.join(settings.MEDIA_ROOT, 'report.pdf')
+
+        with open(pdf_path, 'wb') as f:
+            f.write(pdf_file.getvalue())
+
+        # Перенаправляем на URL для скачивания
+        return JsonResponse({
+            'message': 'Анкетирование завершено. Отчёт готов для скачивания.',
+            'file_url': os.path.join(settings.MEDIA_URL, 'assistant_report.pdf')
+        })
+
+
+
+    return JsonResponse({'message': assistant_response})
 
 
 def login(request):
@@ -64,15 +109,6 @@ def login(request):
     else:
         return render(request, 'login.html')
 
-# старая функция chatbot
-# def chatbot(request):
-#     if request.method == 'POST':
-#         message = request.POST.get('message')
-#         response = ask_openai_with_assistant(message)
-#         return JsonResponse({'message': message, 'response': response})
-#     message = request.session.get('message', 'Данные отсутствуют.')
-#     response = ask_openai_with_assistant(message)
-#     return render(request, 'chatbot.html', {'message': message, 'response': response})
 
 def chatbot(request):
     if request.method == 'POST':
