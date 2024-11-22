@@ -5,7 +5,12 @@
 {% block styles %}
 <style>
   body {
-    background-color: #f0f0f0;
+    background-color: #9CAFBD;
+    background-image: url(https://www.akorda.kz/img/symbol.png?v=1);
+    background-position: top right;
+    background-repeat: no-repeat;
+    background-size: 38%;
+    height: 100%;
   }
   .login-container {
     display: flex;
@@ -17,7 +22,7 @@
     max-width: 400px;
   }
   .card-header {
-    background-color: #007bff;
+    background-color: #1F3C88;
     color: white;
     font-size: 24px;
     font-weight: bold;
@@ -36,7 +41,7 @@
   }
   input[type=text], input[type=password] {
     border-radius: 4px;
-    border: 1px solid #ccc;
+    border: 1px solid #083759;
     padding: 10px;
     font-size: 16px;
     width: 100%;
@@ -44,7 +49,7 @@
     margin-bottom: 10px;
   }
   button[type=submit] {
-    background-color: #007bff;
+    background-color: #1F3C88;
     color: white;
     font-size: 16px;
     font-weight: bold;
@@ -55,7 +60,7 @@
     width: 100%;
   }
   button[type=submit]:hover {
-    background-color: #0062cc;
+    background-color: #083759;
   }
   .alert-danger {
     background-color: #f8d7da;
@@ -86,7 +91,15 @@
           <label for="number">Номер военнослужащего</label>
           <input type="number" class="form-control" id="number" name="number" required>
         </div>
-        <button type="submit">Перейти к чату</button>
+        <div class="form-group">
+          <label for="language">Выберите язык</label>
+          <select class="form-control" id="language" name="language" required>
+            <option value="" disabled selected>Выберите язык</option>
+            <option value="ru">Русский</option>
+            <option value="kk">Казахский</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Перейти к чату</button>
       </form>
     </div>
   </div>
