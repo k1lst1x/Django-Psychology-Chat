@@ -102,7 +102,7 @@
     /* background-image: url(https://www.akorda.kz/img/symbol.png?v=1); */
     background-image: url("{% static 'images/svg/logo.svg' %}");
     background-position: top center;
-    background-repeat: no-repeat;
+    background-repeat: repeat-y;
     background-size: 38%;
     height: 100%;
   }
@@ -133,7 +133,7 @@
                   <b>Psychology Chatbot</b>
                 </div>
                 <div class="message-content">
-                  Здравствуйте! Я психологический чат-бот. Здесь Вы можете задать вопросы или поделиться тем, что Вас беспокоит. Я всегда готов выслушать и помочь Вам найти решение.
+                  {{ response }}
                 </div>
               </div>
             </li>
