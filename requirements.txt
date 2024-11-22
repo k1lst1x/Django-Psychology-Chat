@@ -1,3 +1,5 @@
 django
 openai
 g4f
+django-jazzmin
+gunicorn

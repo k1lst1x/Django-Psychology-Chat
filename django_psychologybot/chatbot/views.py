@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from openai import OpenAI, AssistantEventHandler
 from typing_extensions import override
+from django.shortcuts import redirect
 
 
 assistant_id = "asst_f0PmPM76Nc8dbyEEfeYVQlRy"
@@ -43,22 +44,42 @@ def ask_openai_with_assistant(message):
 
     return event_handler.get_response()
 
-# def ask_openai(message):
-# 	response = client.chat.completions.create(
-# 		messages=[
-#             {"role": "system", "content": "You are an helpful assistant."},
-#             {"role": "user", "content": message},
-#         ],
-# 		model="gpt-3.5-turbo",
-# 	)
+def ask_openai(message):
+	response = client.chat.completions.create(
+		messages=[
+            {"role": "system", "content": "You are an helpful assistant."},
+            {"role": "user", "content": message},
+        ],
+		model="gpt-3.5-turbo",
+	)
 
-# 	response_dict = response.to_dict()
-# 	return response_dict['choices'][0]['message']['content'].strip()
+	response_dict = response.to_dict()
+	return response_dict['choices'][0]['message']['content'].strip()
+
+
+
+def login(request):
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        number = request.POST.get('number', '').strip()
+        # language = request.POST.get('language', '').strip()  # если потребуется
+        
+        if username and number:
+            # Здесь можно передать данные через сессию или URL параметры
+            request.session['message'] = f"Меня зовут {username}, мой номер {number}."
+            return redirect('chatbot')  # Предполагается, что 'chatbot' принимает сессионные данные
+        else:
+            error_message = 'Пожалуйста, заполните все поля.'
+            return render(request, 'login.html', {'error_message': error_message})
+    else:
+        return render(request, 'login.html')
 
 
 def chatbot(request):
-	if request.method == 'POST':
-		message = request.POST.get('message')
-		response = ask_openai_with_assistant(message)
-		return JsonResponse({'message': message, 'response': response})
-	return render(request, 'chatbot.html')
+    if request.method == 'POST':
+        message = request.POST.get('message')
+        response = ask_openai_with_assistant(message)
+        return JsonResponse({'message': message, 'response': response})
+    message = request.session.get('message', 'Данные отсутствуют.')
+    response = ask_openai_with_assistant(message)
+    return render(request, 'chatbot.html', {'message': message, 'response': response})
