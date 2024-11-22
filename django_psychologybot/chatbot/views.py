@@ -3,6 +3,7 @@ from django.http import JsonResponse
 from openai import OpenAI, AssistantEventHandler
 from typing_extensions import override
 from django.shortcuts import redirect
+from . import creds
 
 # from g4f.client import Client
 
@@ -10,10 +11,10 @@ from django.shortcuts import redirect
 # if hasattr(asyncio, 'WindowsSelectorEventLoopPolicy'):
 #     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-assistant_id = "asst_f0PmPM76Nc8dbyEEfeYVQlRy"
+assistant_id = creds.assistant_id
 
 client = OpenAI(
-    api_key="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"
+    api_key=creds.api_key
 )
 
 class EventHandler(AssistantEventHandler):
@@ -45,14 +46,12 @@ class EventHandler(AssistantEventHandler):
     def get_response(self):
         return self.response
 
-thread = client.beta.threads.create()
+# thread = client.beta.threads.create()
 
-def ask_openai_with_assistant(message):
-    # Создаем новый поток
-    
+def ask_openai_with_assistant(message, thread_id):
     # Отправляем сообщение пользователю
     client.beta.threads.messages.create(
-        thread_id=thread.id,
+        thread_id=thread_id,
         role="user",
         content=message
     )
@@ -62,7 +61,7 @@ def ask_openai_with_assistant(message):
 
     # Обрабатываем поток
     with client.beta.threads.runs.stream(
-        thread_id=thread.id,
+        thread_id=thread_id,
         assistant_id=assistant_id,
         event_handler=event_handler,
     ) as stream:
@@ -104,23 +103,46 @@ def login(request):
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
         number = request.POST.get('number', '').strip()
-        # language = request.POST.get('language', '').strip()  # если потребуется
-        
-        if username and number:
-            # Здесь можно передать данные через сессию или URL параметры
-            request.session['message'] = f"Меня зовут {username}, мой номер {number}."
-            return redirect('chatbot')  # Предполагается, что 'chatbot' принимает сессионные данные
+        language = request.POST.get('language', '').strip()
+
+        if username and number and language:
+            thread = client.beta.threads.create()
+            request.session['thread_id'] = thread.id
+            request.session['message'] = f"Меня зовут {username}, мой номер {number} и я хочу разговаривать на {language}."
+            return redirect('chatbot')
         else:
             error_message = 'Пожалуйста, заполните все поля.'
             return render(request, 'login.html', {'error_message': error_message})
     else:
         return render(request, 'login.html')
 
+# старая функция chatbot
+# def chatbot(request):
+#     if request.method == 'POST':
+#         message = request.POST.get('message')
+#         response = ask_openai_with_assistant(message)
+#         return JsonResponse({'message': message, 'response': response})
+#     message = request.session.get('message', 'Данные отсутствуют.')
+#     response = ask_openai_with_assistant(message)
+#     return render(request, 'chatbot.html', {'message': message, 'response': response})
+
 def chatbot(request):
     if request.method == 'POST':
         message = request.POST.get('message')
-        response = ask_openai_with_assistant(message)
+
+        thread_id = request.session.get('thread_id')
+
+        if not thread_id:
+            return redirect('login')
+
+        response = ask_openai_with_assistant(message, thread_id)
         return JsonResponse({'message': message, 'response': response})
+
     message = request.session.get('message', 'Данные отсутствуют.')
-    response = ask_openai_with_assistant(message)
+    thread_id = request.session.get('thread_id')
+
+    if not thread_id:
+        return redirect('login')
+
+    response = ask_openai_with_assistant(message, thread_id)
     return render(request, 'chatbot.html', {'message': message, 'response': response})
