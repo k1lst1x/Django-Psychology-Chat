@@ -1,11 +1,12 @@
 from django.shortcuts import render, redirect
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from openai import OpenAI, AssistantEventHandler
 from typing_extensions import override
 from . import creds
 from django_psychologybot import settings
-from weasyprint import HTML
+from docx import Document
 import os
+import io
 
 
 assistant_id = creds.assistant_id
@@ -29,29 +30,30 @@ class EventHandler(AssistantEventHandler):
 
 # thread = client.beta.threads.create()
 
-QUESTIONNAIRE_LABEL_RU = 'Анектирование завершено!'
+QUESTIONNAIRE_LABEL_RU = 'Анкетирование завершено!'
 QUESTIONNAIRE_LABEL_KZ = 'Сауалдау аяқталды!'
 
 
-def generate_pdf(content):
+def generate_word(content):
     """
-    Генерирует PDF-файл из текста.
+    Генерирует Word-документ из текста.
     """
-    html_content = f"""
-    <html>
-    <head>
-        <title>Отчёт ассистента</title>
-    </head>
-    <body>
-        <h1>Отчёт ассистента</h1>
-        <p>{content}</p>
-    </body>
-    </html>
-    """
-    pdf_file = io.BytesIO()
-    HTML(string=html_content).write_pdf(pdf_file)
-    pdf_file.seek(0)
-    return pdf_file
+    # Создаём объект Word-документа
+    document = Document()
+    
+    # Добавляем заголовок
+    document.add_heading("Отчёт ассистента", level=1)
+    
+    # Добавляем основной текст (контент)
+    document.add_paragraph(content)
+    
+    # Сохраняем документ в поток
+    word_file = io.BytesIO()
+    document.save(word_file)
+    word_file.seek(0)
+
+
+    return word_file
 
 
 def ask_openai_with_assistant(message, thread_id):
@@ -75,18 +77,19 @@ def ask_openai_with_assistant(message, thread_id):
     assistant_response = event_handler.get_response()
 
     if QUESTIONNAIRE_LABEL_RU in assistant_response or QUESTIONNAIRE_LABEL_KZ in assistant_response:
-        pdf_file = generate_pdf(assistant_response)
-        pdf_path = os.path.join(settings.MEDIA_ROOT, 'report.pdf')
+        word_file = generate_word(assistant_response)
+        word_file_path = os.path.join(settings.STATIC_ROOT, 'report.docx')
+        word_file_url = 'http://127.0.0.1:8000/static/report.docx'
 
-        with open(pdf_path, 'wb') as f:
-            f.write(pdf_file.getvalue())
+        with open(word_file_path, 'wb') as f:
+            f.write(word_file.getvalue())
 
         # Перенаправляем на URL для скачивания
         # return JsonResponse({
         #     'message': 'Анкетирование завершено. Отчёт готов для скачивания.',
         #     'file_url': os.path.join(settings.MEDIA_URL, 'assistant_report.pdf')
         # })
-        return assistant_response, os.path.join(settings.MEDIA_URL, 'assistant_report.pdf')
+        return assistant_response, word_file_url
 
     return assistant_response, None
     # return JsonResponse({'message': assistant_response})
@@ -110,6 +113,11 @@ def login(request):
         return render(request, 'login.html')
 
 
+def video_callback(request):
+    return HttpResponse('Callback')
+
+
+
 def chatbot(request):
     if request.method == 'POST':
         message = request.POST.get('message')
@@ -128,5 +136,5 @@ def chatbot(request):
     if not thread_id:
         return redirect('login')
 
-    response = ask_openai_with_assistant(message, thread_id)
+    response, _ = ask_openai_with_assistant(message, thread_id)
     return render(request, 'chatbot.html', {'message': message, 'response': response})

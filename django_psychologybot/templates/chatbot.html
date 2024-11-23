@@ -1,6 +1,10 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block title %}
+Виртуальный помощник
+{% endblock %}
+
 {% block styles %}
 <style>
   body, html {
@@ -239,6 +243,8 @@
       .then(data => {
         const response = data.response;
         const fileUrl = data.fileURL;
+
+        console.log('fileUrl', fileUrl)
         const messageItem = document.createElement('li');
 
         let fileURLHref = '';
