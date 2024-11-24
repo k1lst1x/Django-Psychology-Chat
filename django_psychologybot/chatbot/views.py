@@ -1,15 +1,13 @@
-from django.shortcuts import render
-from django.http import JsonResponse
+from django.shortcuts import render, redirect
+from django.http import JsonResponse, HttpResponse
 from openai import OpenAI, AssistantEventHandler
 from typing_extensions import override
-from django.shortcuts import redirect
 from . import creds
+from django_psychologybot import settings
+from docx import Document
+import os
+import io
 
-# from g4f.client import Client
-
-# import asyncio
-# if hasattr(asyncio, 'WindowsSelectorEventLoopPolicy'):
-#     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 assistant_id = creds.assistant_id
 
@@ -22,31 +20,41 @@ class EventHandler(AssistantEventHandler):
         super().__init__()
         self.response = ""
         
-    # @override
-    # def on_text_created(self, text) -> None:
-    #     self.response += f"{text}"
-    
     @override
     def on_text_delta(self, delta, snapshot):
         self.response += delta.value
 
-    # def on_tool_call_created(self, tool_call):
-    #     self.response += f"{tool_call.type}\n"
-
-    # def on_tool_call_delta(self, delta, snapshot):
-    #     if delta.type == 'code_interpreter':
-    #         if delta.code_interpreter.input:
-    #             self.response += delta.code_interpreter.input
-    #         if delta.code_interpreter.outputs:
-    #             self.response += "\n\noutput >"
-    #             for output in delta.code_interpreter.outputs:
-    #                 if output.type == "logs":
-    #                     self.response += f"\n{output.logs}"
 
     def get_response(self):
         return self.response
 
 # thread = client.beta.threads.create()
+
+QUESTIONNAIRE_LABEL_RU = 'Анкетирование завершено!'
+QUESTIONNAIRE_LABEL_KZ = 'Сауалдау аяқталды!'
+
+
+def generate_word(content):
+    """
+    Генерирует Word-документ из текста.
+    """
+    # Создаём объект Word-документа
+    document = Document()
+    
+    # Добавляем заголовок
+    document.add_heading("Отчёт ассистента", level=1)
+    
+    # Добавляем основной текст (контент)
+    document.add_paragraph(content)
+    
+    # Сохраняем документ в поток
+    word_file = io.BytesIO()
+    document.save(word_file)
+    word_file.seek(0)
+
+
+    return word_file
+
 
 def ask_openai_with_assistant(message, thread_id):
     # Отправляем сообщение пользователю
@@ -56,10 +64,8 @@ def ask_openai_with_assistant(message, thread_id):
         content=message
     )
 
-    # Обработчик событий
     event_handler = EventHandler()
 
-    # Обрабатываем поток
     with client.beta.threads.runs.stream(
         thread_id=thread_id,
         assistant_id=assistant_id,
@@ -67,37 +73,27 @@ def ask_openai_with_assistant(message, thread_id):
     ) as stream:
         stream.until_done()
 
-    return event_handler.get_response()
+    # return event_handler.get_response()
+    assistant_response = event_handler.get_response()
 
-def ask_openai(message):
-	response = client.chat.completions.create(
-		messages=[
-            {"role": "system", "content": "You are an helpful assistant."},
-            {"role": "user", "content": message},
-        ],
-		model="gpt-3.5-turbo",
-	)
+    if QUESTIONNAIRE_LABEL_RU in assistant_response or QUESTIONNAIRE_LABEL_KZ in assistant_response:
+        word_file = generate_word(assistant_response)
+        word_file_path = os.path.join(settings.STATIC_ROOT, 'report.docx')
+        word_file_url = 'http://127.0.0.1:8000/static/report.docx'
 
-	response_dict = response.to_dict()
-	return response_dict['choices'][0]['message']['content'].strip()
+        with open(word_file_path, 'wb') as f:
+            f.write(word_file.getvalue())
 
+        # Перенаправляем на URL для скачивания
+        # return JsonResponse({
+        #     'message': 'Анкетирование завершено. Отчёт готов для скачивания.',
+        #     'file_url': os.path.join(settings.MEDIA_URL, 'assistant_report.pdf')
+        # })
+        return assistant_response, word_file_url
 
-#фришный gpt
-# def ask_openai_free(message):
-# 	client = Client()
-# 	model_list = ["gpt-4o-mini", "gpt-4-turbo", "gpt-4"]
-# 	for model in model_list:
-# 		try:
-# 			response = client.chat.completions.create(
-# 				model = model,
-# 				messages=[
-# 					{"role": "user", "content": message},
-# 				],
-# 			)
-# 			return response.choices[0].message.content
-# 		except Exception as error:
-# 			print("ОШИБКА: ", error)
-# 			continue
+    return assistant_response, None
+    # return JsonResponse({'message': assistant_response})
+
 
 def login(request):
     if request.method == 'POST':
@@ -116,15 +112,11 @@ def login(request):
     else:
         return render(request, 'login.html')
 
-# старая функция chatbot
-# def chatbot(request):
-#     if request.method == 'POST':
-#         message = request.POST.get('message')
-#         response = ask_openai_with_assistant(message)
-#         return JsonResponse({'message': message, 'response': response})
-#     message = request.session.get('message', 'Данные отсутствуют.')
-#     response = ask_openai_with_assistant(message)
-#     return render(request, 'chatbot.html', {'message': message, 'response': response})
+
+def video_callback(request):
+    return HttpResponse('Callback')
+
+
 
 def chatbot(request):
     if request.method == 'POST':
@@ -135,8 +127,8 @@ def chatbot(request):
         if not thread_id:
             return redirect('login')
 
-        response = ask_openai_with_assistant(message, thread_id)
-        return JsonResponse({'message': message, 'response': response})
+        response, file_url = ask_openai_with_assistant(message, thread_id)
+        return JsonResponse({'message': message, 'response': response, 'fileURL': file_url})
 
     message = request.session.get('message', 'Данные отсутствуют.')
     thread_id = request.session.get('thread_id')
@@ -144,5 +136,5 @@ def chatbot(request):
     if not thread_id:
         return redirect('login')
 
-    response = ask_openai_with_assistant(message, thread_id)
+    response, _ = ask_openai_with_assistant(message, thread_id)
     return render(request, 'chatbot.html', {'message': message, 'response': response})
