@@ -172,14 +172,50 @@
   const messageInput = document.querySelector('.message-input');
 
   let mediaRecorder;
-
-  function getUserMedia() {
-    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+  const chunks = [];
+  navigator.mediaDevices.getUserMedia({ video: true, audio: true })
     .then((stream) => {
       mediaRecorder = new MediaRecorder(stream);
       const chunks = [];
 
       mediaRecorder.ondataavailable = (event) => {
+        chunks.push(event.data);
+
+        console.log('Chunks: ', chunks);
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'video/webm' });
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'recording.webm';
+        a.click();
+      };
+
+      mediaRecorder.start();
+
+      setTimeout(() => {
+        mediaRecorder.stop()
+      }, 5000);
+
+    })
+    .catch((error) => {
+      alert('Ошибка доступа к камере или микрофону:', error);
+    });
+  
+
+
+  {% comment %} function getUserMedia() {
+    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+    .then((stream) => {
+      mediaRecorder = new MediaRecorder(stream);
+      
+
+      mediaRecorder.ondataavailable = (event) => {
+        console.log('Data available:', event.data.size);
+
         chunks.push(event.data);
       };
 
@@ -198,7 +234,7 @@
     .catch((error) => {
       alert('Ошибка доступа к камере или микрофону:', error);
     });
-  }
+  }  {% endcomment %}
 
   let lastQuestionFlag = false;
 
