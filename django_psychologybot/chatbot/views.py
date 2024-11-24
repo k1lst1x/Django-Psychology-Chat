@@ -5,6 +5,7 @@ from typing_extensions import override
 from . import creds
 from django_psychologybot import settings
 from docx import Document
+from threading import Lock
 import os
 import io
 
@@ -14,6 +15,8 @@ assistant_id = creds.assistant_id
 client = OpenAI(
     api_key=creds.api_key
 )
+
+thread_lock = Lock()
 
 class EventHandler(AssistantEventHandler):
     def __init__(self):
@@ -58,11 +61,12 @@ def generate_word(content):
 
 def ask_openai_with_assistant(message, thread_id):
     # Отправляем сообщение пользователю
-    client.beta.threads.messages.create(
-        thread_id=thread_id,
-        role="user",
-        content=message
-    )
+    with thread_lock:
+        client.beta.threads.messages.create(
+            thread_id=thread_id,
+            role="user",
+            content=message
+        )
 
     event_handler = EventHandler()
 
