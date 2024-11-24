@@ -1,6 +1,10 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block title %}
+Виртуальный помощник
+{% endblock %}
+
 {% block styles %}
 <style>
   body, html {
@@ -121,7 +125,7 @@
 {% block content %}
 <div class="chat-container">
   <div class="card flex-grow-1 border-0">
-    <div class="card-header text-white"><!-- Чат --></div>
+    <div class="card-header text-white"></div>
     <div class="messages-container">
       <div class="container">
         <div class="card-body messages-box">
@@ -167,6 +171,37 @@
   const messageForm = document.querySelector('.message-form');
   const messageInput = document.querySelector('.message-input');
 
+  let mediaRecorder;
+
+  function getUserMedia() {
+    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+    .then((stream) => {
+      mediaRecorder = new MediaRecorder(stream);
+      const chunks = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        chunks.push(event.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'video/webm' });
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'recording.webm';
+        a.click();
+      };
+
+      mediaRecorder.start();
+    })
+    .catch((error) => {
+      alert('Ошибка доступа к камере или микрофону:', error);
+    });
+  }
+
+  let lastQuestionFlag = false;
+
   messageForm.addEventListener('submit', (event) => {
     event.preventDefault();
 
@@ -187,10 +222,16 @@
             </div>
         </div>`;
     messagesList.appendChild(messageItem);
-
     messageInput.value = '';
 
-    fetch('', {
+    if (lastQuestionFlag) {
+      console.log('end');
+
+      mediaRecorder.stop();
+      lastQuestionFlag = false;
+    }
+
+    fetch('/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -201,7 +242,41 @@
       .then(response => response.json())
       .then(data => {
         const response = data.response;
+
+        const QUESTIONNAIRE_START_SIGN_RU = 'Начинается анкетирование!';
+        const QUESTIONNAIRE_START_SIGN_KZ = 'Сауалнама басталады!';
+
+        if (response.toLowerCase().includes(QUESTIONNAIRE_START_SIGN_KZ.toLowerCase()) 
+          || response.toLowerCase().includes(QUESTIONNAIRE_START_SIGN_RU.toLowerCase())) {
+            console.log('start');
+
+            getUserMedia();
+        }
+
+        const LAST_QUESTION_MARK_RU = 'Последний вопрос';
+        const LAST_QUESTION_MARK_KZ = 'Соңғы сұрақ';
+
+        if (response.toLowerCase().includes(LAST_QUESTION_MARK_KZ.toLowerCase()) || 
+              response.toLowerCase().includes(LAST_QUESTION_MARK_RU.toLowerCase())) {
+          console.log('last');
+
+          lastQuestionFlag = true;
+        }
+
+        const fileUrl = data.fileURL;
+
+        console.log('fileUrl', fileUrl)
         const messageItem = document.createElement('li');
+
+        let fileURLHref = '';
+        if (fileUrl) {
+          fileURLHref = `
+            <a href="${fileUrl}">
+              Скачать файл отчёта
+            </a>
+        `;
+        }
+
         messageItem.classList.add('message', 'received');
         messageItem.innerHTML = `
         <div class="message-text">
@@ -210,6 +285,7 @@
             </div>
             <div class="message-content">
                 ${response}
+                ${fileURLHref}
             </div>
         </div>
           `;
