@@ -79,7 +79,7 @@ def ask_openai_with_assistant(message, thread_id):
     if QUESTIONNAIRE_LABEL_RU in assistant_response or QUESTIONNAIRE_LABEL_KZ in assistant_response:
         word_file = generate_word(assistant_response)
         word_file_path = os.path.join(settings.STATIC_ROOT, 'report.docx')
-        word_file_url = 'http://127.0.0.1:8000/static/report.docx'
+        word_file_url = 'https://s983114.srvape.com/static/report.docx'
 
         with open(word_file_path, 'wb') as f:
             f.write(word_file.getvalue())

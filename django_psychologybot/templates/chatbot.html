@@ -125,7 +125,7 @@
 {% block content %}
 <div class="chat-container">
   <div class="card flex-grow-1 border-0">
-    <div class="card-header text-white"><!-- Чат --></div>
+    <div class="card-header text-white"></div>
     <div class="messages-container">
       <div class="container">
         <div class="card-body messages-box">
@@ -231,7 +231,7 @@
 
     messageInput.value = '';
 
-    fetch('', {
+    fetch('/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
