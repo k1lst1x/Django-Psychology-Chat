@@ -20,7 +20,7 @@ class Methodology(models.Model):
         verbose_name_plural = "Методики"
 
 def report_file_path(instance, filename):
-    return os.path.join(settings.STATIC_ROOT, 'reports', filename)
+    return os.path.join(settings.MEDIA_ROOT, 'reports', filename)
 
 class Report(models.Model):
     LANGUAGE_CHOICES = [

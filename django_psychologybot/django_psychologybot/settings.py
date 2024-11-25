@@ -11,7 +11,7 @@ SECRET_KEY = 'ux)plafr!taa=pops7c#2ig19)j-3g(bd93q-6@%&v5bxb6x-+'
 ALLOWED_HOSTS = ['s983114.srvape.com', '127.0.0.1', 'localhost']
 
 INSTALLED_APPS = [
-    # 'jazzmin',
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -105,8 +105,39 @@ STATIC_ROOT = "staticfiles"
 #STATIC_ROOT = os.path.join(BASE_DIR, 'static/') 
 # STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static'),)
 
+MEDIA_ROOT = os.path.join(BASE_DIR, 'uploads')
+MEDIA_URL = '/uploads/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+JAZZMIN_SETTINGS = {
+    # Основное
+    "site_title": "Bereke Admin",  
+    "site_header": "Bereke Панель управления",
+    "site_brand": "BerekeAdmin", 
+    "site_logo": "/logo.ico", 
+    "site_logo_classes": "img-circle", 
+    "site_logo_width": "64px",  
+    "site_logo_height": "64px",
+    "welcome_sign": "Добро пожаловать в административный раздел Береке",
+
+
+    "copyright": "© 2024 Bereke", 
+
+
+    "topmenu_links": [
+        {"name": "На сайт", "url": "/", "icon": "fas fa-globe"},  # Переход на сайт
+    ],
+
+    "show_sidebar": True,  
+    "navigation_expanded": True,  
+    "custom_links": {  
+        "my_app": [
+            {"name": "Статистика", "url": "/admin/my_app/report/", "icon": "fas fa-chart-bar"},
+        ]
+    },
+    "custom_css": "admin/custom.css",
+}

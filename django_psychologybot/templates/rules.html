@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}Правила пользования{% endblock %}
+
+{% block styles %}
+<style>
+  body {
+    background-color: #9CAFBD;
+    background-image: url(https://www.akorda.kz/img/symbol.png?v=1);
+    background-position: top right;
+    background-repeat: no-repeat;
+    background-size: 38%;
+    height: 100%;
+    font-family: 'Roboto', Arial, sans-serif;
+    line-height: 2;
+  }
+  .rules-container {
+    max-width: 800px;
+    margin: 50px auto;
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  .rules-header {
+    text-align: center;
+    font-size: 28px;
+    font-weight: bold;
+    color: #1F3C88;
+    margin-bottom: 20px;
+  }
+  .rules-list {
+    padding-left: 20px;
+  }
+  .rules-list li {
+    margin-bottom: 15px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="rules-container">
+  <div class="rules-header">Правила пользования</div>
+  <p>1. Перед прохождением тестирования, необходимо зарегистрироваться, для этого военнослужащий вводит:</p>
+  <ul class="rules-list">
+    <li>Фамилию Имя Отчество (ФИО)</li>
+    <li>Свой номер</li>
+    <li>Выбирает предпочитаемый язык</li>
+    <li>Нажимает кнопку "Перейти к чату"</li>
+  </ul>
+  <p>2. Для того, чтобы начать тестирование, необходимо дать разрешение на видеозапись и согласие чату и перейти к ответам на вопросы.</p>
+  <p>3. После завершения тестирования, необходимо нажать на строку "Скачать файл отчета".</p>
+</div>
+{% endblock %}

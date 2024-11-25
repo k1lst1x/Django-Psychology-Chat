@@ -118,6 +118,32 @@
     }
   }
 
+  .rules-icon {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background-color: #fff;
+    border-radius: 25px;
+    border: 4px solid #1F3C88;
+    display: inline-block;
+    padding: 10px;
+  }
+
+  .rules-icon img {
+    width: 32px;
+    height: 32px;
+  }
+
+  .navbar-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    background-color: #083759;
+    border-radius: 25px;
+    border: 2px solid white;
+    display: inline-block;
+    padding: 10px;
+  }
 </style>
 {% endblock %}
 
@@ -125,7 +151,12 @@
 {% block content %}
 <div class="chat-container">
   <div class="card flex-grow-1 border-0">
-    <div class="card-header text-white"></div>
+    <div class="card-header text-white">
+      <div class="navbar-title">Береке</div>
+      <a href="{% url 'rules' %}" class="rules-icon" target="_blank">
+        <img src="{% static 'images/svg/rules-icon.svg' %}" alt="Rules Icon">
+      </a>
+    </div>
     <div class="messages-container">
       <div class="container">
         <div class="card-body messages-box">
@@ -171,72 +202,42 @@
   const messageForm = document.querySelector('.message-form');
   const messageInput = document.querySelector('.message-input');
 
-  let mediaRecorder;
-  const chunks = [];
   navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-    .then((stream) => {
-      mediaRecorder = new MediaRecorder(stream);
-      const chunks = [];
+  .then((stream) => {
+    alert('Stream получен:', stream);
 
-      mediaRecorder.ondataavailable = (event) => {
-        chunks.push(event.data);
+    // Настройка MediaRecorder для записи видео и аудио
+    const mediaRecorder = new MediaRecorder(stream);
+    const chunks = [];
 
-        console.log('Chunks: ', chunks);
-      };
+    mediaRecorder.ondataavailable = (event) => {
+      chunks.push(event.data);
+    };
 
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'video/webm' });
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(chunks, { type: 'video/webm' });
 
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'recording.webm';
-        a.click();
-      };
+      const url = URL.createObjectURL(blob);
+      alert('Видео записано, URL:', url);
 
-      mediaRecorder.start();
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'recording.webm';
+      a.click();
+    };
 
-      setTimeout(() => {
-        mediaRecorder.stop()
-      }, 5000);
+    mediaRecorder.start();
+    alert('Начата запись');
 
-    })
-    .catch((error) => {
-      alert('Ошибка доступа к камере или микрофону:', error);
-    });
-  
+    setTimeout(() => {
+      mediaRecorder.stop();
+      alert('Остановлена запись');
+    }, 5000);
+  })
+  .catch((error) => {
+    alert('Ошибка доступа к камере или микрофону:', error);
+  });
 
-
-  {% comment %} function getUserMedia() {
-    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-    .then((stream) => {
-      mediaRecorder = new MediaRecorder(stream);
-      
-
-      mediaRecorder.ondataavailable = (event) => {
-        console.log('Data available:', event.data.size);
-
-        chunks.push(event.data);
-      };
-
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'video/webm' });
-
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'recording.webm';
-        a.click();
-      };
-
-      mediaRecorder.start();
-    })
-    .catch((error) => {
-      alert('Ошибка доступа к камере или микрофону:', error);
-    });
-  }  {% endcomment %}
-
-  let lastQuestionFlag = false;
 
   messageForm.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -258,14 +259,8 @@
             </div>
         </div>`;
     messagesList.appendChild(messageItem);
+
     messageInput.value = '';
-
-    if (lastQuestionFlag) {
-      console.log('end');
-
-      mediaRecorder.stop();
-      lastQuestionFlag = false;
-    }
 
     fetch('/chat', {
       method: 'POST',
@@ -278,27 +273,6 @@
       .then(response => response.json())
       .then(data => {
         const response = data.response;
-
-        const QUESTIONNAIRE_START_SIGN_RU = 'Начинается анкетирование!';
-        const QUESTIONNAIRE_START_SIGN_KZ = 'Сауалнама басталады!';
-
-        if (response.toLowerCase().includes(QUESTIONNAIRE_START_SIGN_KZ.toLowerCase()) 
-          || response.toLowerCase().includes(QUESTIONNAIRE_START_SIGN_RU.toLowerCase())) {
-            console.log('start');
-
-            getUserMedia();
-        }
-
-        const LAST_QUESTION_MARK_RU = 'Последний вопрос';
-        const LAST_QUESTION_MARK_KZ = 'Соңғы сұрақ';
-
-        if (response.toLowerCase().includes(LAST_QUESTION_MARK_KZ.toLowerCase()) || 
-              response.toLowerCase().includes(LAST_QUESTION_MARK_RU.toLowerCase())) {
-          console.log('last');
-
-          lastQuestionFlag = true;
-        }
-
         const fileUrl = data.fileURL;
 
         console.log('fileUrl', fileUrl)
