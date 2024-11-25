@@ -171,6 +171,7 @@
   const messageForm = document.querySelector('.message-form');
   const messageInput = document.querySelector('.message-input');
 
+<<<<<<< Updated upstream
   navigator.mediaDevices.getUserMedia({ video: true, audio: true })
   .then((stream) => {
     alert('Stream получен:', stream);
@@ -208,6 +209,94 @@
   });
 
 
+=======
+  let mediaRecorder;
+  const chunks = [];
+  {% comment %}
+    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      .then((stream) => {
+        mediaRecorder = new MediaRecorder(stream);
+        const chunks = [];
+  
+        mediaRecorder.ondataavailable = (event) => {
+          console.log('Event data: ', event.data);
+  
+          chunks.push(event.data);
+  
+          console.log('Chunks: ', chunks);
+        };
+  
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(chunks, { type: 'video/webm' });
+  
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'recording.webm';
+          a.click();
+        };
+  
+        mediaRecorder.start();
+  
+        setTimeout(() => {
+          mediaRecorder.stop()
+        }, 5000);
+  
+      })
+      .catch((error) => {
+        alert('Ошибка доступа к камере или микрофону:', error);
+      });
+  {% endcomment %}
+  
+
+
+  function getUserMedia() {
+    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+    .then((stream) => {
+      mediaRecorder = new MediaRecorder(stream);
+      
+      mediaRecorder.ondataavailable = (event) => {
+        chunks.push(event.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'video/webm' });
+
+        {% comment %}
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'recording.webm';
+          a.click();
+        {% endcomment %}
+
+        const fileName = 'recording.webm';
+        const formData = new FormData();
+        formData.append('video', blob, fileName);
+
+        console.log('Upload video');
+
+        fetch('/upload_video', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log('Emotions data: ', data);
+        })
+        .catch(error => console.log('Error: ', error));
+      };
+
+      mediaRecorder.start();
+    })
+    .catch((error) => {
+      alert('Ошибка доступа к камере или микрофону:', error);
+    });
+  }
+
+  let lastQuestionFlag = false;
+
+>>>>>>> Stashed changes
   messageForm.addEventListener('submit', (event) => {
     event.preventDefault();
 
